@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Scenario-Based Legal Exam – Hard Mode (32 Questions)</title>
+  <style>
+    :root { --bg:#f6f6f6; --card:#fff; --border:#d0d0d0; --text:#111; --muted:#555; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 1020px; margin: 0 auto; padding: 18px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    h1,h2,h3 { margin: 0 0 10px 0; }
+    p { margin: 8px 0; color: var(--muted); line-height: 1.35; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .spacer { flex: 1 1 auto; }
+    .btn {
+      appearance:none; border:1px solid var(--border); background:#fff; color:#111;
+      padding:10px 14px; border-radius: 12px; cursor:pointer; font-weight:700;
+    }
+    .btn.primary { background:#111; color:#fff; border-color:#111; }
+    .btn.danger { background:#b00020; color:#fff; border-color:#b00020; }
+    .btn:disabled { opacity:.55; cursor:not-allowed; }
+    .pill {
+      display:inline-flex; align-items:center; gap:8px;
+      border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:999px;
+      font-weight:700;
+    }
+    .progress {
+      width: 100%; height: 10px; background: #e8e8e8; border-radius:999px; overflow:hidden;
+      border:1px solid var(--border);
+    }
+    .progress > div { height: 100%; width: 0%; background: #111; transition: width .2s ease; }
+    .qmeta { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .qtext { font-size: 1.03rem; font-weight: 800; margin-top: 10px; line-height: 1.38; white-space: pre-wrap; }
+    .choices { margin-top: 10px; display:grid; gap:10px; }
+    .choice {
+      display:flex; gap:10px; align-items:flex-start;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      background: #fff;
+    }
+    .choice input { margin-top: 3px; transform: scale(1.15); }
+    .choice:hover { box-shadow: 0 1px 8px rgba(0,0,0,0.05); }
+    .choice.selected { border-color:#111; }
+    .flag { cursor:pointer; user-select:none; font-weight:900; }
+    .flag.on { color:#b00020; }
+    .toast { margin-top: 10px; font-weight: 800; }
+    .ok { color:#0b7a2a; }
+    .bad { color:#b00020; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 880px) { .grid2 { grid-template-columns: 1fr; } }
+    .reviewList { margin-top: 12px; display:grid; gap:10px; }
+    .reviewItem { border:1px solid var(--border); border-radius: 12px; padding: 12px; background:#fff; }
+    .reviewHead { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .tag { padding:4px 10px; border-radius:999px; font-weight:800; border:1px solid var(--border); background:#fff; }
+    .tag.correct { border-color:#0b7a2a; color:#0b7a2a; }
+    .tag.wrong { border-color:#b00020; color:#b00020; }
+    .tag.blank { border-color:#888; color:#444; }
+    .explain { margin-top: 8px; color:#222; line-height: 1.35; white-space: pre-wrap; }
+    .small { font-size: 0.92rem; }
+    .kbd {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      border:1px solid var(--border); padding:2px 6px; border-radius: 8px; background:#fff;
+    }
+    .divider { height:1px; background: #e7e7e7; margin: 14px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- START -->
+    <div id="screenStart" class="card">
+      <h1>Scenario-Based Legal Exam – Hard Mode (32 Questions)</h1>
+      <p>Longer scenarios, tighter rule testing, mixed concepts. One question at a time, flags, jump list, optional timer, shuffle, and full review w/ explanations.</p>
+      <div class="divider"></div>
+
+      <div class="grid2">
+        <div class="card" style="box-shadow:none;">
+          <h3>Settings</h3>
+          <label style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+            <input id="toggleTimer" type="checkbox" />
+            <span><b>Enable timer</b> <span class="small" style="color:#555;">(counts up)</span></span>
+          </label>
+          <label style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+            <input id="toggleShuffle" type="checkbox" />
+            <span><b>Shuffle questions</b> <span class="small" style="color:#555;">(optional)</span></span>
+          </label>
+          <p class="small" style="margin-top:10px; color:#555;">
+            Shortcuts: <span class="kbd">←</span>/<span class="kbd">→</span> for back/next, <span class="kbd">1–4</span> for A–D, <span class="kbd">F</span> to flag.
+          </p>
+        </div>
+
+        <div class="card" style="box-shadow:none;">
+          <h3>Start</h3>
+          <p class="small" style="color:#555;">Submit anytime. You’ll get a score + review of every question and why the correct answer wins.</p>
+          <button class="btn primary" onclick="startQuiz()">Start Quiz</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="screenQuiz" class="card" style="display:none;">
+      <div class="row">
+        <span class="pill">Progress: <span id="progressText">1/32</span></span>
+        <span class="pill">Answered: <span id="answeredCount">0</span>/32</span>
+        <span class="pill">Flagged: <span id="flaggedCount">0</span></span>
+        <span class="pill" id="timerPill" style="display:none;">Time: <span id="timerText">0:00</span></span>
+        <div class="spacer"></div>
+        <button class="btn" onclick="openJump()">Jump</button>
+        <button class="btn danger" onclick="confirmSubmit()">Submit</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="progress"><div id="progressBar"></div></div>
+      </div>
+
+      <div class="qbox">
+        <div class="qmeta" style="margin-top:12px;">
+          <span class="pill">Question <span id="qNum">1</span> of 32</span>
+          <span class="pill">Selected: <span id="selectedLabel" style="color:#555; font-weight:700;">None</span></span>
+          <span class="pill flag" id="flagBtn" onclick="toggleFlag()">⚑ Flag</span>
+        </div>
+
+        <div id="qText" class="qtext"></div>
+        <div id="choices" class="choices"></div>
+
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="prevBtn" onclick="prevQ()">Back</button>
+          <button class="btn primary" id="nextBtn" onclick="nextQ()">Next</button>
+          <div class="spacer"></div>
+          <button class="btn" onclick="clearAnswer()">Clear Answer</button>
+        </div>
+
+        <div id="toast" class="toast"></div>
+      </div>
+    </div>
+
+    <!-- JUMP MODAL -->
+    <div id="jumpModal" class="card" style="display:none; margin-top:14px;">
+      <div class="row">
+        <h3 style="margin:0;">Jump to Question</h3>
+        <div class="spacer"></div>
+        <button class="btn" onclick="closeJump()">Close</button>
+      </div>
+      <p class="small" style="color:#555;">Green = answered, Red = flagged, Gray = unanswered.</p>
+      <div id="jumpGrid" style="display:grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap:8px; margin-top:10px;"></div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="screenResults" class="card" style="display:none;">
+      <div class="row">
+        <h2 style="margin:0;">Results</h2>
+        <div class="spacer"></div>
+        <button class="btn" onclick="restart()">Restart</button>
+      </div>
+      <div class="divider"></div>
+      <div class="row">
+        <span class="pill"><b>Score:</b> <span id="scoreText">0/32</span></span>
+        <span class="pill"><b>Percent:</b> <span id="percentText">0%</span></span>
+        <span class="pill"><b>Time:</b> <span id="finalTime">—</span></span>
+      </div>
+      <p id="scoreMsg" style="margin-top:10px;"></p>
+
+      <div class="divider"></div>
+      <h3>Review (All Questions)</h3>
+      <div id="reviewList" class="reviewList"></div>
+    </div>
+  </div>
+
+<script>
+/**
+ * HARD MODE – 32 long scenarios covering:
+ * - Miranda custody/interrogation, waiver, invocation, public safety, voluntariness
+ * - Sixth Amendment offense-specific counsel & deliberate elicitation basics (academy-style)
+ * - Grand jury / immunity
+ * - Due process identifications (arrays/show-ups)
+ * - Drug/possession/intent indicators
+ * - Report writing (facts vs conclusions)
+ * - Terry frisk RS armed/dangerous
+ * - Force reasonableness framework
+ * - Fraud/ID docs features
+ * - HazMat priorities, ERG usage, ICS command transfer
+ * - Digital evidence preservation / Faraday / documentation / chain of custody / OPSEC
+ */
+
+const baseQuestions = [
+  {
+    q:
+`1) (Miranda – custody + interrogation)
+Detectives put Lila Cruz (28) in a small interview room at the station. She arrived voluntarily after a phone request. The door is closed but unlocked. Two detectives sit between her and the only visible exit. They tell her, “You’re not under arrest… but we need to clear up some serious stuff.” They keep her phone “for evidence,” and one detective says, “If you leave now, we’ll go get a warrant and you’ll be arrested tonight.”
+Without warnings, they show her a photo of a burned car and say, “People who love their kids don’t do this.” Lila starts crying and says, “I only lit it because he threatened me.”
+At trial for arson, she moves to suppress. Best answer?`,
+    opts: [
+      "Admissible because she came voluntarily and no one asked a question.",
+      "Admissible because showing photos is not interrogation.",
+      "Likely suppressed because it was custodial interrogation (functional equivalent) without Miranda.",
+      "Automatically admissible because statements about feelings are not testimonial."
+    ],
+    ans: 2,
+    exp:
+`Miranda applies when a reasonable person would feel not free to leave (custody) AND police engage in interrogation or its functional equivalent.
+Here: door closed, police-controlled setting, phone taken, implied arrest threat, and emotionally provocative statements/photographs likely to elicit an incriminating response → functional equivalent of interrogation.
+Strong suppression argument.`
+  },
+  {
+    q:
+`2) (Miranda – ambiguous counsel request)
+After Miranda, Malik says, “Man… I think I might need a lawyer, but I don’t know. What would you do if you were me?” The detective replies: “I can’t advise you, but if you didn’t do it you should tell your side.” Malik then confesses.
+Best analysis?`,
+    opts: [
+      "Confession is excluded because any mention of 'lawyer' is invocation.",
+      "Confession is admissible because Malik did not unambiguously invoke counsel.",
+      "Confession is excluded because officers must stop questioning whenever a suspect asks any question.",
+      "Confession is admissible only if Malik signed a written waiver."
+    ],
+    ans: 1,
+    exp:
+`Invocation of counsel must be clear and unambiguous. “I think I might need a lawyer” is typically treated as ambiguous.
+Police may continue, though best practice is to clarify. Written waiver not required if waiver is otherwise knowing/voluntary.`
+  },
+  {
+    q:
+`3) (Miranda – right to silence & scrupulously honored)
+After Miranda, Jae says, “I’m done talking.” Detective stops immediately. Two hours later, a different detective re-Mirandizes Jae, says, “We’re investigating a different angle,” and asks about the same robbery. Jae answers and admits being the driver.
+Most accurate?`,
+    opts: [
+      "Always excluded because once silence invoked, police may never re-approach.",
+      "Admissible if the right to silence was scrupulously honored (time gap + fresh warnings + no badgering).",
+      "Excluded unless Jae re-initiated contact with police.",
+      "Admissible only if police talk about a different crime."
+    ],
+    ans: 1,
+    exp:
+`Police may re-approach after honoring the right to silence if they “scrupulously honor” it: stop questioning, allow time, re-administer warnings, and avoid pressure/badgering.
+Re-initiation is required for counsel invocation, not necessarily for silence.`
+  },
+  {
+    q:
+`4) (Public safety exception)
+Officers arrest Tanya for brandishing a handgun at a crowded food truck. They handcuff her and immediately ask, “Where’s the gun right now?” before Miranda. She says, “Under the napkins in the stroller.” They recover it.
+At trial, her statement is:`,
+    opts: [
+      "Excluded because custody always requires Miranda first.",
+      "Admissible under the public safety exception.",
+      "Excluded because the question was investigatory rather than medical.",
+      "Admissible only if Tanya waived in writing."
+    ],
+    ans: 1,
+    exp:
+`Public safety exception allows limited pre-Miranda questioning necessary to neutralize an immediate danger (e.g., locating a firearm in a public area).`
+  },
+  {
+    q:
+`5) (Voluntariness – coercion)
+Investigators interview Andre (single parent) at home. They say: “If you don’t tell us who sold you the pills, we’ll arrest you tonight. Your kids will go to foster care. Your employer will hear you’re a drug dealer.” Andre panics and confesses to distribution.
+Most likely result?`,
+    opts: [
+      "Admissible because threats are allowed interrogation tactics.",
+      "Excluded as involuntary because threats about children/custody and livelihood can overbear free will.",
+      "Admissible because Andre was not in custody.",
+      "Excluded only if Andre asked for a lawyer."
+    ],
+    ans: 1,
+    exp:
+`Voluntariness is separate from Miranda. Extreme threats tied to children/custody and job loss can overbear will under totality of circumstances → coerced/involuntary statement.`
+  },
+  {
+    q:
+`6) (Implied waiver)
+After Miranda, Officer reads the rights and asks, “Do you understand and want to talk?” Sora shrugs, then immediately says, “Fine. I’ll tell you what happened,” and talks for 15 minutes.
+Best answer:`,
+    opts: [
+      "Inadmissible because waiver must be express and verbal.",
+      "Inadmissible because shrugging is invocation.",
+      "Admissible—waiver can be implied by voluntary statements after understanding warnings.",
+      "Admissible only with signed waiver form."
+    ],
+    ans: 2,
+    exp:
+`An implied waiver is possible where warnings are given, understood, and the suspect voluntarily speaks. Express/signed waiver is not required in most academy frameworks.`
+  },
+  {
+    q:
+`7) (Sixth Amendment offense-specific)
+Noah is formally charged (indicted) for burglary and counsel is appointed. Detectives later question him—after Miranda—about a separate, uncharged auto theft from the same week. Noah confesses to the auto theft.
+Most accurate?`,
+    opts: [
+      "Excluded because once charged with any crime, police may not question on anything.",
+      "Admissible under Sixth Amendment because the right is offense-specific; still must satisfy Miranda if custodial.",
+      "Excluded because counsel must be present for all questioning once appointed.",
+      "Admissible only if Noah re-initiates contact."
+    ],
+    ans: 1,
+    exp:
+`Sixth Amendment right to counsel attaches after formal charging and is offense-specific. It bars deliberate elicitation about the charged offense, not necessarily unrelated uncharged offenses. Miranda still applies if custodial interrogation.`
+  },
+  {
+    q:
+`8) (Undercover listening vs elicitation)
+After counsel is appointed, police place a cellmate informant near Priya and instruct him: “Don’t ask her anything—just listen.” The informant says nothing. Priya voluntarily tells another inmate, loudly, “I hid the knife behind the dryer.” Informant reports it.
+Best answer:`,
+    opts: [
+      "Excluded because any jail statement after counsel appointment is barred.",
+      "Excluded because Miranda was required for any jailhouse conversation.",
+      "Admissible because there was no interrogation/deliberate elicitation—only passive listening.",
+      "Excluded unless Priya signed a waiver."
+    ],
+    ans: 2,
+    exp:
+`Passive listening generally is not interrogation (Miranda) and not deliberate elicitation (Sixth) absent prompting/questions designed to draw statements.`
+  },
+  {
+    q:
+`9) (Grand jury + use immunity)
+A prosecutor subpoenas Jonah to testify before a grand jury about a fraud scheme. Jonah invokes the Fifth. The court grants use-and-derivative-use immunity. Jonah still refuses.
+Best statement:`,
+    opts: [
+      "Jonah can still refuse because the Fifth is absolute.",
+      "Jonah must testify; he can be held in contempt for refusing after immunity.",
+      "Jonah must testify only if the prosecutor promises not to prosecute him at all.",
+      "Jonah may testify only if his lawyer is present in the grand jury room."
+    ],
+    ans: 1,
+    exp:
+`Use-and-derivative-use immunity removes the privilege basis for refusing. Refusal after valid immunity can lead to contempt. Immunity does not equal blanket transactional immunity.`
+  },
+  {
+    q:
+`10) (Due process – suggestive identification)
+A robbery suspect is described as a 6'5" bald man with a neck tattoo. The photo array has five 5'8" men with full hair and no visible tattoos, plus one photo of the suspect matching the description. Witness picks suspect.
+Best answer:`,
+    opts: [
+      "Valid because arrays only need 6 photos.",
+      "Impermissibly suggestive—suspect stands out; due process issue.",
+      "Valid because witness chose voluntarily.",
+      "Excluded only if suspect had counsel present."
+    ],
+    ans: 1,
+    exp:
+`Due process prohibits unnecessarily suggestive identification procedures likely to create misidentification. If suspect obviously stands out from fillers, it’s impermissibly suggestive.`
+  },
+  {
+    q:
+`11) (Show-up)
+Minutes after a convenience-store assault, officers detain Devin one block away based on clothing description (red hoodie, white sneakers) and bring the victim to view Devin in handcuffs under bright lights.
+Which is most accurate?`,
+    opts: [
+      "Show-ups are always illegal.",
+      "Show-ups are disfavored but often permitted when close in time/space to the offense.",
+      "Show-ups require at least six suspects.",
+      "Show-ups are allowed only if counsel is present."
+    ],
+    ans: 1,
+    exp:
+`Show-ups are inherently suggestive but can be permitted when promptly conducted near the scene to quickly confirm or release a suspect, especially shortly after the crime.`
+  },
+  {
+    q:
+`12) (Possession – constructive)
+Officers stop a car driven by Rina. Passenger is her cousin. In the locked glovebox, officers find a loaded pistol and a bag of pills. Rina has the only key fob that unlocks glovebox and admits she “knew the pills were there” but says gun isn’t hers.
+Best possession theory for gun?`,
+    opts: [
+      "Actual possession by driver",
+      "Constructive possession (dominion/control + knowledge)",
+      "No possession because gun not on her person",
+      "Joint possession requires fingerprints"
+    ],
+    ans: 1,
+    exp:
+`Constructive possession can be proven by dominion/control over location (locked glovebox controlled by Rina) plus knowledge. Fingerprints are not required.`
+  },
+  {
+    q:
+`13) (Intent to distribute)
+During a lawful search of Omar’s apartment, officers find: 60 small baggies of fentanyl, digital scale with residue, $2,800 in mixed bills, and a notebook with nicknames and amounts. Omar claims it’s “for personal use.”
+Most likely charge supported?`,
+    opts: [
+      "Simple possession only",
+      "Possession with intent to distribute",
+      "Manufacturing",
+      "Attempted robbery"
+    ],
+    ans: 1,
+    exp:
+`Packaging, scale, cash, and ledgers are classic indicators of intent to distribute, beyond mere personal use.`
+  },
+  {
+    q:
+`14) (Drug category indicators)
+At 0200, officers contact Talia: extremely talkative, sweating, dilated pupils, grinding teeth, paranoid that cameras are tracking her, and unable to sit still.
+Most consistent drug category?`,
+    opts: [
+      "Depressant",
+      "Stimulant",
+      "Narcotic/Opioid",
+      "Dissociative (typical 'drunk' presentation)"
+    ],
+    ans: 1,
+    exp:
+`Dilated pupils, agitation, bruxism (teeth grinding), paranoia, and hyperactivity are commonly associated with stimulant intoxication (e.g., meth/MDMA/cocaine).`
+  },
+  {
+    q:
+`15) (Drug-facilitated assault)
+A victim reports: drank one beverage, became suddenly very drowsy within 20 minutes, memory gaps, woke up disoriented, and friends say she seemed “zoned out.” Hospital notes rapid-onset sedation/amnesia.
+Most likely substance in academy testing?`,
+    opts: [
+      "LSD",
+      "GHB (or similar CNS depressant used in DFSA)",
+      "Cocaine",
+      "THC edible"
+    ],
+    ans: 1,
+    exp:
+`Rapid sedation and amnesia are commonly associated with GHB/related DFSA-type depressants in many academy frameworks.`
+  },
+  {
+    q:
+`16) (Report writing – legal conclusions)
+Officer writes: “The suspect was clearly guilty and acted with malicious intent. He assaulted me unlawfully.” Supervisor flags it.
+Best reason this is improper?`,
+    opts: [
+      "It’s hearsay",
+      "It’s a legal conclusion/opinion instead of objective facts",
+      "It violates Miranda",
+      "It automatically suppresses evidence"
+    ],
+    ans: 1,
+    exp:
+`Reports should document observable facts (what was seen/heard), not broad legal conclusions like “guilty,” “malicious,” or “unlawful.”`
+  },
+  {
+    q:
+`17) (Terry frisk)
+Officer sees Zeke pacing outside a closed jewelry store at 0300, looking into windows. Zeke is nervous. Officer detains and immediately pats Zeke down “for safety” without more. No bulge, no weapon info, no furtive waistband movement.
+Best statement?`,
+    opts: [
+      "Frisk is valid because any detention allows a pat-down",
+      "Frisk is invalid absent reasonable suspicion Zeke is armed and dangerous",
+      "Frisk is valid because jewelry stores involve weapons",
+      "Frisk is valid if Zeke is nervous"
+    ],
+    ans: 1,
+    exp:
+`A frisk requires reasonable suspicion the person is armed and dangerous—not just suspicion of crime or nervousness.`
+  },
+  {
+    q:
+`18) (Use of force reasonableness)
+An officer uses a takedown on a suspect who is actively pulling away, ignoring commands, and reaching repeatedly into a jacket pocket in a crowded street. Later video shows officer didn’t know pocket was empty.
+Reasonableness is judged by:`,
+    opts: [
+      "Officer’s subjective intent to punish",
+      "Totality of circumstances from the perspective of a reasonable officer on scene",
+      "Whether the suspect was actually armed",
+      "Public reaction after the event"
+    ],
+    ans: 1,
+    exp:
+`Force reasonableness is evaluated under the totality of circumstances from the perspective of a reasonable officer at the time, not with hindsight or actual weapon presence.`
+  },
+  {
+    q:
+`19) (Fraud/ID – altered vs counterfeit)
+A genuine driver license is examined. The photo and name match a real person, but the expiration date appears scraped and reprinted, and the microprint is disrupted in that area.
+Best classification?`,
+    opts: [
+      "Counterfeit document (entirely fake)",
+      "Altered genuine document",
+      "Valid but expired only",
+      "Forged signature only"
+    ],
+    ans: 1,
+    exp:
+`A real document that has been changed (date/photo elements manipulated) is an altered genuine document, not a fully counterfeit one.`
+  },
+  {
+    q:
+`20) (ID security feature)
+An ID has raised text you can feel with your fingernail in a specific area, while the rest is smooth. This feature is best described as:`,
+    opts: [
+      "Magnetic stripe encoding",
+      "RFID chip",
+      "Tactile printing/embossing",
+      "Optical variable ink only"
+    ],
+    ans: 2,
+    exp:
+`Raised/feelable features are tactile printing/embossing designed to deter counterfeits and enable quick physical checks.`
+  },
+  {
+    q:
+`21) (HazMat priorities)
+First arriving officer finds a tanker leak with unknown vapor, two civilians coughing nearby, and a strong chemical odor. What is the FIRST operational priority?`,
+    opts: [
+      "Collect evidence and photograph the tanker",
+      "Identify the chemical by opening the tanker hatch",
+      "Life safety: move people away/isolate area and request HazMat",
+      "Question the driver about permits"
+    ],
+    ans: 2,
+    exp:
+`HazMat priorities: life safety first (protect/evacuate), then incident stabilization, then property/environment/evidence. Do not take unnecessary exposure risks.`
+  },
+  {
+    q:
+`22) (ICS – transfer of command)
+A patrol sergeant starts incident command at a multi-car pileup with fuel spill. A HazMat Captain arrives and formally assumes command, assigning the sergeant as Operations. This is:`,
+    opts: [
+      "Chain-of-custody",
+      "Transfer of command",
+      "Mutual aid only",
+      "Unlawful delegation"
+    ],
+    ans: 1,
+    exp:
+`ICS allows transfer of command to a qualified/higher authority with a clear announcement/briefing, ensuring continuity of operations.`
+  },
+  {
+    q:
+`23) (ERG lookup)
+A truck placard shows “1203” (gasoline). You want initial guide information. Which ERG section should you use first?`,
+    opts: [
+      "Green pages only",
+      "Blue pages (name index) only",
+      "Yellow pages (ID number index) to find the guide number",
+      "White pages only"
+    ],
+    ans: 2,
+    exp:
+`If you have a UN/NA number (like 1203), use the yellow ID-number index to locate the correct guide number and response guidance.`
+  },
+  {
+    q:
+`24) (HazMat isolation vs approach)
+On an unknown chemical spill, an officer starts evacuating bystanders and establishes a perimeter to keep people away until HazMat arrives. This action is best described as:`,
+    opts: [
+      "Recognize and avoid",
+      "Isolate and deny entry",
+      "Investigate and confirm",
+      "Decontaminate and release"
+    ],
+    ans: 1,
+    exp:
+`Setting a perimeter, evacuating, and preventing entry is “isolate and deny entry,” a core early HazMat action for life safety.`
+  },
+  {
+    q:
+`25) (Digital evidence – powered-on device)
+During a search warrant, officers find a laptop open and unlocked with an email draft visible. What is the BEST immediate documentation step before touching anything?`,
+    opts: [
+      "Close the laptop so it doesn’t change",
+      "Photograph/document the screen state and running applications",
+      "Remove battery immediately",
+      "Disconnect internet only, no photos"
+    ],
+    ans: 1,
+    exp:
+`If a device is powered on/unlocked, first document the on-screen content/state (photos/notes) because it can change quickly. Then follow agency procedures for preservation.`
+  },
+  {
+    q:
+`26) (Faraday)
+Officers seize a suspect’s smartphone that is still on and receiving notifications. To prevent remote wiping or network changes, best tool is:`,
+    opts: [
+      "A paper evidence bag",
+      "A Faraday bag/container",
+      "A ziplock bag with water",
+      "A magnetic strip cover"
+    ],
+    ans: 1,
+    exp:
+`Faraday containers block radio signals (cell/Wi-Fi/Bluetooth), preventing remote wipe or network activity changes.`
+  },
+  {
+    q:
+`27) (Preservation – video overwrite)
+A business DVR is set to overwrite footage every 72 hours. Officer waits 5 days to request it. Video is gone. The error is best described as failure to:`,
+    opts: [
+      "Read Miranda",
+      "Preserve/isolate evidence promptly",
+      "Maintain officer safety",
+      "Obtain consent before asking"
+    ],
+    ans: 1,
+    exp:
+`Digital systems overwrite. Prompt preservation/isolation (seizure, export, hold request) is crucial to avoid spoliation/overwriting.`
+  },
+  {
+    q:
+`28) (OPSEC / social media)
+An officer posts on public social media: “Big warrant service tomorrow morning at 0500—can’t wait.” That creates:`,
+    opts: [
+      "A chain-of-custody violation",
+      "An operational security risk",
+      "A Miranda issue",
+      "A search warrant defect automatically"
+    ],
+    ans: 1,
+    exp:
+`Sharing operational details can compromise safety and mission (OPSEC). It can also create administrative and evidentiary issues.`
+  },
+  {
+    q:
+`29) (Citation/violation notice procedure)
+An officer writes one violation notice listing two separate offenses (illegal dumping + no permit) because “it’s easier.” Policy requires one offense per notice.
+Most accurate?`,
+    opts: [
+      "Fine because it’s the same suspect",
+      "Improper: typically one offense per notice for clarity/processing",
+      "Required: always combine offenses",
+      "No issue if supervisor signs"
+    ],
+    ans: 1,
+    exp:
+`Many enforcement systems require one offense per notice to avoid ambiguity, ensure proper coding, and prevent processing/notice defects.`
+  },
+  {
+    q:
+`30) (Duty to render aid after force)
+Officer uses OC spray on a combative subject. Subject is later secured and complains of burning eyes and breathing discomfort. Officer leaves him in a hot car for 25 minutes without decon/water.
+Best answer:`,
+    opts: [
+      "No duty exists once handcuffed",
+      "Officer must render aid/decontaminate consistent with policy; failure can violate duty of care",
+      "Decon is optional only if subject asks politely",
+      "Only EMTs can decontaminate"
+    ],
+    ans: 1,
+    exp:
+`After force (like OC), officers generally have a duty to render reasonable aid and follow decontamination protocols. Failure can create liability and policy violations.`
+  },
+  {
+    q:
+`31) (Chain of custody – digital)
+A USB drive with exported surveillance video is left unsealed in an officer’s backpack for two days, then turned in with no evidence label or log.
+Primary risk?`,
+    opts: [
+      "Jurisdictional defect",
+      "Chain of custody / integrity challenge",
+      "Miranda suppression",
+      "Sixth Amendment violation"
+    ],
+    ans: 1,
+    exp:
+`Improper packaging, sealing, labeling, and logging undermine integrity and chain of custody—creating admissibility/credibility issues.`
+  },
+  {
+    q:
+`32) (Combined: custody + public safety + voluntariness)
+Officers respond to a “shots fired” call in an apartment complex. They find Evan sweating, holding his side, and a bystander yells, “He just ditched the gun!” Officers handcuff Evan and ask, before Miranda, “Where is the gun?” Evan says, “In the laundry room hamper.” They find it.
+Then, without Miranda, an officer says, “If a kid finds it and dies, that’s on you,” and Evan says, “I fired once at the guy in the red hat.”
+Which is most accurate?`,
+    opts: [
+      "Both statements admissible under public safety exception",
+      "First statement admissible (public safety). Second likely suppressed as custodial interrogation beyond immediate safety need",
+      "Both suppressed because custody always requires Miranda",
+      "Second admissible because it was a moral appeal, not interrogation"
+    ],
+    ans: 1,
+    exp:
+`Public safety can justify the immediate “Where is the gun?” question. Once the safety need is satisfied, continued elicitation in custody without Miranda (guilt/moral pressure) is likely interrogation → suppression of the second statement.`
+  }
+];
+
+let questions = [];
+let order = [];
+let current = 0;
+let answers = [];
+let flagged = [];
+let timerOn = false;
+let shuffleOn = false;
+let t0 = 0;
+let timerId = null;
+
+function startQuiz() {
+  timerOn = document.getElementById("toggleTimer").checked;
+  shuffleOn = document.getElementById("toggleShuffle").checked;
+
+  order = [...Array(baseQuestions.length).keys()];
+  if (shuffleOn) shuffleArray(order);
+
+  questions = order.map(i => baseQuestions[i]);
+  answers = Array(questions.length).fill(null);
+  flagged = Array(questions.length).fill(false);
+  current = 0;
+
+  document.getElementById("screenStart").style.display = "none";
+  document.getElementById("screenResults").style.display = "none";
+  document.getElementById("screenQuiz").style.display = "block";
+  document.getElementById("jumpModal").style.display = "none";
+
+  document.getElementById("timerPill").style.display = timerOn ? "inline-flex" : "none";
+  if (timerOn) {
+    t0 = Date.now();
+    timerId = setInterval(tick, 250);
+    tick();
+  } else {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+  }
+
+  renderQ();
+}
+
+function restart() {
+  if (timerId) clearInterval(timerId);
+  timerId = null;
+  document.getElementById("screenResults").style.display = "none";
+  document.getElementById("screenQuiz").style.display = "none";
+  document.getElementById("jumpModal").style.display = "none";
+  document.getElementById("screenStart").style.display = "block";
+}
+
+function tick() {
+  document.getElementById("timerText").textContent = fmtTime(Date.now() - t0);
+}
+
+function fmtTime(ms) {
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2,'0')}`;
+}
+
+function renderQ() {
+  const q = questions[current];
+  document.getElementById("qNum").textContent = (current + 1);
+  document.getElementById("progressText").textContent = `${current+1}/${questions.length}`;
+  document.getElementById("qText").textContent = q.q;
+
+  const selected = answers[current];
+  document.getElementById("selectedLabel").textContent = selected === null ? "None" : ["A","B","C","D"][selected];
+
+  const flagBtn = document.getElementById("flagBtn");
+  flagBtn.classList.toggle("on", flagged[current]);
+  flagBtn.textContent = flagged[current] ? "⚑ Flagged" : "⚑ Flag";
+
+  const choicesDiv = document.getElementById("choices");
+  choicesDiv.innerHTML = "";
+  q.opts.forEach((text, idx) => {
+    const label = document.createElement("label");
+    label.className = "choice";
+    if (selected === idx) label.classList.add("selected");
+    label.innerHTML = `
+      <input type="radio" name="choice" ${selected === idx ? "checked" : ""} />
+      <div><b>${["A","B","C","D"][idx]}.</b> ${escapeHtml(text)}</div>
+    `;
+    label.onclick = () => selectAnswer(idx);
+    choicesDiv.appendChild(label);
+  });
+
+  document.getElementById("prevBtn").disabled = (current === 0);
+  document.getElementById("nextBtn").textContent = (current === questions.length - 1) ? "Finish" : "Next";
+
+  const pct = (current / (questions.length-1)) * 100;
+  document.getElementById("progressBar").style.width = `${Math.max(0, Math.min(100, pct))}%`;
+
+  updateCounts();
+  setToast("");
+}
+
+function selectAnswer(idx) { answers[current] = idx; renderQ(); }
+function clearAnswer() { answers[current] = null; renderQ(); }
+function toggleFlag() { flagged[current] = !flagged[current]; renderQ(); }
+
+function nextQ() {
+  if (current === questions.length - 1) { confirmSubmit(); return; }
+  current++; renderQ();
+}
+function prevQ() { if (current > 0) { current--; renderQ(); } }
+
+function updateCounts() {
+  document.getElementById("answeredCount").textContent = answers.filter(a => a !== null).length;
+  document.getElementById("flaggedCount").textContent = flagged.filter(Boolean).length;
+}
+
+function confirmSubmit() {
+  const unanswered = answers.filter(a => a === null).length;
+  if (unanswered > 0) {
+    const ok = confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`);
+    if (!ok) return;
+  }
+  submitQuiz();
+}
+
+function submitQuiz() {
+  if (timerId) clearInterval(timerId);
+  timerId = null;
+
+  document.getElementById("screenQuiz").style.display = "none";
+  document.getElementById("jumpModal").style.display = "none";
+  document.getElementById("screenResults").style.display = "block";
+
+  let correct = 0;
+  for (let i=0; i<questions.length; i++) if (answers[i] === questions[i].ans) correct++;
+
+  const pct = Math.round((correct/questions.length)*100);
+  document.getElementById("scoreText").textContent = `${correct}/${questions.length}`;
+  document.getElementById("percentText").textContent = `${pct}%`;
+  document.getElementById("finalTime").textContent = timerOn ? fmtTime(Date.now()-t0) : "—";
+
+  const msg = (pct >= 90) ? "Excellent. You’re operating at test-day level. Re-run with shuffle on."
+            : (pct >= 80) ? "Strong. Tighten the misses and you’ll be very consistent."
+            : (pct >= 70) ? "Borderline solid. Review the explanations and retake until stable."
+            : "Needs work. Drill the rules and re-take—focus on why wrong answers are tempting.";
+  document.getElementById("scoreMsg").textContent = msg;
+
+  buildReview();
+}
+
+function buildReview() {
+  const list = document.getElementById("reviewList");
+  list.innerHTML = "";
+
+  for (let i=0; i<questions.length; i++) {
+    const q = questions[i];
+    const your = answers[i];
+    const correct = q.ans;
+
+    const item = document.createElement("div");
+    item.className = "reviewItem";
+
+    const statusTag = document.createElement("span");
+    if (your === null) { statusTag.className = "tag blank"; statusTag.textContent = "UNANSWERED"; }
+    else if (your === correct) { statusTag.className = "tag correct"; statusTag.textContent = "CORRECT"; }
+    else { statusTag.className = "tag wrong"; statusTag.textContent = "WRONG"; }
+
+    const flagTag = document.createElement("span");
+    flagTag.className = "tag";
+    flagTag.textContent = flagged[i] ? "FLAGGED" : "—";
+    flagTag.style.borderColor = flagged[i] ? "#b00020" : "#d0d0d0";
+    flagTag.style.color = flagged[i] ? "#b00020" : "#555";
+
+    const head = document.createElement("div");
+    head.className = "reviewHead";
+    head.innerHTML = `<b>Q${i+1}.</b> <span class="small" style="color:#555;">Your: ${your===null?"—":(["A","B","C","D"][your])} | Correct: ${["A","B","C","D"][correct]}</span>`;
+    head.appendChild(statusTag);
+    head.appendChild(flagTag);
+
+    const qt = document.createElement("div");
+    qt.className = "small";
+    qt.style.marginTop = "8px";
+    qt.innerHTML = `<b>Prompt:</b><br>${escapeHtml(q.q)}`;
+
+    const opts = document.createElement("div");
+    opts.className = "small";
+    opts.style.marginTop = "8px";
+    opts.innerHTML = q.opts.map((t,idx)=>{
+      const letter = ["A","B","C","D"][idx];
+      const isC = idx===correct;
+      const isY = idx===your;
+      const mark = isC ? " ✅" : "";
+      const you = isY ? " (you)" : "";
+      return `<div style="margin:4px 0;">${letter}. ${escapeHtml(t)}${mark}${you}</div>`;
+    }).join("");
+
+    const ex = document.createElement("div");
+    ex.className = "explain";
+    ex.innerHTML = `<b>Explanation:</b><br>${escapeHtml(q.exp)}`;
+
+    item.appendChild(head);
+    item.appendChild(qt);
+    item.appendChild(opts);
+    item.appendChild(ex);
+    list.appendChild(item);
+  }
+}
+
+function openJump() {
+  const modal = document.getElementById("jumpModal");
+  modal.style.display = (modal.style.display === "none") ? "block" : "none";
+  buildJumpGrid();
+}
+function closeJump() { document.getElementById("jumpModal").style.display = "none"; }
+
+function buildJumpGrid() {
+  const grid = document.getElementById("jumpGrid");
+  grid.innerHTML = "";
+
+  for (let i=0; i<questions.length; i++) {
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.textContent = (i+1);
+    const isAnswered = answers[i] !== null;
+    const isFlagged = flagged[i];
+
+    btn.style.padding = "8px 0";
+    btn.style.borderRadius = "10px";
+    btn.style.fontWeight = "900";
+
+    if (isFlagged) { btn.style.borderColor = "#b00020"; btn.style.color = "#b00020"; }
+    else if (isAnswered) { btn.style.borderColor = "#0b7a2a"; btn.style.color = "#0b7a2a"; }
+    else { btn.style.borderColor = "#888"; btn.style.color = "#444"; }
+
+    btn.onclick = () => { current = i; closeJump(); renderQ(); window.scrollTo({top:0, behavior:"smooth"}); };
+    grid.appendChild(btn);
+  }
+}
+
+function setToast(msg, ok=null) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast";
+  if (ok === true) t.classList.add("ok");
+  if (ok === false) t.classList.add("bad");
+}
+
+function shuffleArray(a) {
+  for (let i=a.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+// Keyboard shortcuts (quiz screen only)
+document.addEventListener("keydown", (e) => {
+  const quizVisible = document.getElementById("screenQuiz").style.display !== "none";
+  if (!quizVisible) return;
+
+  if (e.key === "ArrowRight") { e.preventDefault(); nextQ(); }
+  if (e.key === "ArrowLeft") { e.preventDefault(); prevQ(); }
+  if (["1","2","3","4"].includes(e.key)) selectAnswer(parseInt(e.key,10)-1);
+  if (e.key.toLowerCase() === "f") toggleFlag();
+});
+</script>
+</body>
+</html>
